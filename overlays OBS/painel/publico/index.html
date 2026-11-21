@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Painel — Adventistas Botafogo</title>
+<link rel="stylesheet" href="painel.css">
+</head>
+<body>
+  <header class="topo">
+    <div class="marca-topo">
+      <img class="logo" src="logo-branca.svg" alt="Adventistas Botafogo">
+      <span class="versao" id="versao"></span>
+    </div>
+    <div class="status">
+      <span class="pilula" id="stServidor"><i></i>Painel</span>
+      <span class="pilula" id="stObs"><i></i>OBS</span>
+      <span class="pilula" id="stFonte"><i></i>Overlays na cena</span>
+      <button class="btn-mini" id="btnInstalar" hidden>Instalar no OBS</button>
+    </div>
+  </header>
+
+  <div class="aviso" id="aviso" hidden></div>
+
+  <main class="grade">
+    <!-- Nome -->
+    <section class="cartao a-nome" aria-labelledby="tNome">
+      <div class="cartao-cab">
+        <h2 id="tNome">Nome na tela</h2>
+        <span class="no-ar" id="noAr" hidden>● NO AR <b id="tempo">0:00</b></span>
+      </div>
+
+      <div class="atual" id="atual">
+        <span class="atual-rotulo">Na tela agora</span>
+        <strong id="atualNome">—</strong>
+        <span id="atualLinha"></span>
+      </div>
+
+      <form id="form" autocomplete="off">
+        <label>Nome
+          <input id="nome" maxlength="120" placeholder="Ex.: Pr. Patrick Duarte" required>
+        </label>
+        <label><span>Linha de baixo <small>(opcional)</small></span>
+          <input id="linha" maxlength="120" placeholder="@adventistasbotafogo">
+        </label>
+        <label>Tempo na tela
+          <select id="duracao">
+            <option value="0">Fica até eu tirar</option>
+            <option value="8">8 segundos</option>
+            <option value="12" selected>12 segundos</option>
+            <option value="20">20 segundos</option>
+          </select>
+        </label>
+        <div class="acoes">
+          <button type="submit" class="btn btn-mostrar" id="btnMostrar">Mostrar</button>
+          <button type="button" class="btn btn-tirar" id="btnTirar">Tirar <kbd>Esc</kbd></button>
+        </div>
+        <button type="button" class="btn-link" id="btnSalvar">+ Salvar na lista</button>
+      </form>
+    </section>
+
+    <!-- QR code -->
+    <section class="cartao a-qr" aria-labelledby="tQr">
+      <div class="cartao-cab">
+        <h2 id="tQr">QR code na tela</h2>
+        <span class="no-ar" id="qrNoAr" hidden>● NO AR <b id="qrTempo">0:00</b></span>
+      </div>
+
+      <div class="atual" id="qrAtual">
+        <span class="atual-rotulo">Na tela agora</span>
+        <strong id="qrAtualTitulo">—</strong>
+        <span id="qrAtualUrl"></span>
+      </div>
+
+      <form id="qrForm" autocomplete="off">
+        <label>Link do QR
+          <input id="qrUrl" maxlength="500" inputmode="url" placeholder="https://…" required>
+        </label>
+        <div class="dupla">
+          <label>Título
+            <input id="qrTitulo" maxlength="60" placeholder="Siga no Instagram">
+          </label>
+          <label><span>Rodapé <small>(opcional)</small></span>
+            <input id="qrRodape" maxlength="60" placeholder="Aponte a câmera">
+          </label>
+        </div>
+        <label>Tempo na tela
+          <select id="qrDuracao">
+            <option value="0">Fica até eu tirar</option>
+            <option value="15">15 segundos</option>
+            <option value="30" selected>30 segundos</option>
+            <option value="60">1 minuto</option>
+          </select>
+        </label>
+        <div class="acoes">
+          <button type="submit" class="btn btn-mostrar">Mostrar</button>
+          <button type="button" class="btn btn-tirar" id="qrTirar">Tirar</button>
+        </div>
+        <button type="button" class="btn-link" id="qrSalvar">+ Salvar na lista</button>
+      </form>
+    </section>
+
+    <section class="cartao a-lista" aria-labelledby="tLista">
+      <div class="cartao-cab"><h2 id="tLista">Pessoas salvas</h2></div>
+      <ul class="lista" id="lista"></ul>
+      <p class="vazio" id="listaVazia" hidden>Nenhuma pessoa salva ainda. Preencha o nome e clique em “Salvar na lista”.</p>
+    </section>
+
+    <section class="cartao a-links" aria-labelledby="tLinks">
+      <div class="cartao-cab"><h2 id="tLinks">Links salvos</h2></div>
+      <ul class="lista" id="links"></ul>
+      <p class="vazio" id="linksVazia" hidden>Nenhum link salvo ainda. Preencha o link e clique em “Salvar na lista”.</p>
+    </section>
+
+    <section class="cartao a-eng" aria-labelledby="tEng">
+      <div class="cartao-cab">
+        <h2 id="tEng">Chamadas de engajamento</h2>
+        <span class="no-ar" id="engNoAr" hidden>● NO AR</span>
+      </div>
+      <div class="chamadas" id="chamadas"></div>
+      <p class="dica">Cada chamada aparece no canto superior direito por 6 segundos e sai sozinha.</p>
+
+      <div class="rodizio">
+        <label class="chave">
+          <input type="checkbox" id="rodAtivo">
+          <span>Rodízio automático</span>
+        </label>
+        <label class="rod-intervalo">a cada
+          <select id="rodMinutos">
+            <option value="5">5 min</option>
+            <option value="10">10 min</option>
+            <option value="15">15 min</option>
+            <option value="20">20 min</option>
+            <option value="30">30 min</option>
+          </select>
+        </label>
+        <div class="rod-ids" id="rodIds"></div>
+        <p class="rod-proxima" id="rodProxima"></p>
+      </div>
+    </section>
+
+    <section class="cartao a-previa" aria-labelledby="tPrevia">
+      <div class="cartao-cab"><h2 id="tPrevia">Prévia do que está na tela</h2></div>
+      <div class="previa" id="previa">
+        <iframe src="/overlay/lower-third.html?controle=1" title="Prévia do nome" tabindex="-1"></iframe>
+        <iframe src="/overlay/qrcode.html?controle=1" title="Prévia do QR code" tabindex="-1"></iframe>
+        <iframe src="/overlay/engajamento.html?controle=1" title="Prévia das chamadas" tabindex="-1"></iframe>
+      </div>
+    </section>
+  </main>
+
+  <footer class="rodape">
+    <button class="btn btn-panico" id="btnTudo">Esconder tudo</button>
+  </footer>
+
+<script src="painel.js"></script>
+</body>
+</html>

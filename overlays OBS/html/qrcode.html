@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>QR code</title>
+<link rel="stylesheet" href="tema.css">
+<style>
+  /* Geometria idêntica à comp "QR - OBS" (1920×1080): cartão no canto inferior direito,
+     borda direita em x=1780 (espelho da margem de 140px do lower third). */
+  :root { --direita: 140px; --larg: 380px; }
+
+  .barra {
+    position: absolute;
+    right: calc(var(--direita) - 12px); top: 483px;
+    width: 12px; height: 489px;
+    background: var(--azul);
+    transform: scaleY(0);
+  }
+  .placa-qr {
+    position: absolute;
+    right: var(--direita); top: 483px;
+    width: var(--larg); height: 435px;
+    background: var(--marinho);
+    transform-origin: right center;
+    transform: scaleX(0);
+  }
+  .placa-rodape {
+    position: absolute;
+    right: var(--direita); top: 918px;
+    height: 54px; min-width: 320px;
+    background: var(--branco);
+    transform-origin: right center;
+    transform: scaleX(0);
+  }
+  /* bloco centralizado na placa azul: título + quadrado branco com o QR */
+  .centro {
+    position: absolute;
+    right: var(--direita); top: 483px;
+    width: var(--larg);
+  }
+  .titulo {
+    height: 84px; line-height: 84px;
+    text-align: center; white-space: nowrap;
+    font-size: 34px; font-weight: 700;
+    color: var(--branco);
+    opacity: 0;
+  }
+  .fundo-qr {
+    margin: 0 auto;
+    width: 322px; height: 322px;
+    background: var(--branco);
+    display: grid; place-items: center;
+    opacity: 0;
+  }
+  .fundo-qr svg { display: block; shape-rendering: crispEdges; }
+  .rodape {
+    position: absolute;
+    right: 170px; top: 918px;
+    height: 54px; line-height: 54px;
+    white-space: nowrap;
+    font-size: 26px; font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--marinho);
+    opacity: 0;
+  }
+</style>
+</head>
+<body>
+  <div class="barra" id="barra"></div>
+  <div class="placa-qr" id="placaQr"></div>
+  <div class="placa-rodape" id="placaRodape"></div>
+  <div class="centro">
+    <div class="titulo" id="titulo"><span id="tituloTxt"></span></div>
+    <div class="fundo-qr" id="fundoQr"></div>
+  </div>
+  <div class="rodape" id="rodape"></div>
+
+<script src="lib/qrcode-generator.js"></script>
+<script>
+/*  Parâmetros na URL (modo avulso):
+      url      — link do QR            (padrão: https://instagram.com/adventistasbotafogo)
+      titulo   — texto da placa azul   (padrão: "Siga no Instagram")
+      rodape   — texto da placa branca (padrão: "Aponte a câmera"; vazio esconde a placa)
+      duracao  — segundos na tela antes de sair sozinho
+    ?controle=1 — controlado pelo painel do operador (overlays OBS/painel)
+*/
+const p = new URLSearchParams(location.search);
+const $ = (id) => document.getElementById(id);
+
+// QR desenhado na hora. Margem branca de 4 módulos (zona de silêncio) dentro do quadrado de 322px.
+function desenharQr(texto) {
+  qrcode.stringToBytes = qrcode.stringToBytesFuncs["UTF-8"];
+  const qr = qrcode(0, "M");
+  qr.addData(texto || " ");
+  qr.make();
+  const n = qr.getModuleCount();
+  let d = "";
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (qr.isDark(y, x)) d += `M${x} ${y}h1v1h-1z`;
+  const lado = 322 * n / (n + 8);
+  $("fundoQr").innerHTML = `<svg width="${lado}" height="${lado}" viewBox="0 0 ${n} ${n}"><path d="${d}" fill="#000"/></svg>`;
+}
+
+function aplicar(m) {
+  desenharQr(m.url);
+  $("tituloTxt").textContent = m.titulo;
+  $("rodape").textContent = m.rodape;
+  const temRodape = !!m.rodape;
+  $("placaRodape").style.display = $("rodape").style.display = temRodape ? "" : "none";
+  $("barra").style.height = temRodape ? "" : "435px";
+  // a placa azul alarga se o título for comprido (30px de respiro de cada lado)
+  const larg = Math.max(380, $("tituloTxt").offsetWidth + 60);
+  document.documentElement.style.setProperty("--larg", larg + "px");
+  $("placaRodape").style.width = Math.max(320, $("rodape").offsetWidth + 60) + "px";
+}
+
+// Linha do tempo copiada dos keyframes da comp (segundos)
+const IN = "cubic-bezier(0.33, 0, 1, 1)"; // saída suave, chegada linear (deslize dos textos)
+const ENTRADA = [
+  { el: "barra",       de: 0.0,  dur: 0.4, quadros: [{ transform: "scaleY(0)" }, { transform: "scaleY(1)" }] },
+  { el: "placaQr",     de: 0.2,  dur: 0.6, quadros: [{ transform: "scaleX(0)" }, { transform: "scaleX(1)" }] },
+  { el: "placaRodape", de: 0.4,  dur: 0.6, quadros: [{ transform: "scaleX(0)" }, { transform: "scaleX(1)" }] },
+  { el: "titulo",      de: 0.6,  dur: 0.5, quadros: [{ opacity: 0, transform: "translateX(30px)" }, { opacity: 1, transform: "none" }], ease: IN },
+  { el: "fundoQr",     de: 0.75, dur: 0.5, quadros: [{ opacity: 0, transform: "scale(0.85)" }, { opacity: 1, transform: "none" }] },
+  { el: "rodape",      de: 0.8,  dur: 0.5, quadros: [{ opacity: 0, transform: "translateX(30px)" }, { opacity: 1, transform: "none" }], ease: IN },
+];
+const SAIDA = [
+  { el: "rodape",      de: 0.0, dur: 0.35, quadros: [{ opacity: 1 }, { opacity: 0 }] },
+  { el: "titulo",      de: 0.1, dur: 0.35, quadros: [{ opacity: 1 }, { opacity: 0 }] },
+  { el: "fundoQr",     de: 0.1, dur: 0.35, quadros: [{ opacity: 1, transform: "none" }, { opacity: 0, transform: "scale(0.95)" }] },
+  { el: "placaRodape", de: 0.3, dur: 0.6,  quadros: [{ transform: "scaleX(1)" }, { transform: "scaleX(0)" }] },
+  { el: "placaQr",     de: 0.4, dur: 0.6,  quadros: [{ transform: "scaleX(1)" }, { transform: "scaleX(0)" }] },
+  { el: "barra",       de: 0.8, dur: 0.4,  quadros: [{ transform: "scaleY(1)" }, { transform: "scaleY(0)" }] },
+];
+
+function tocar(seq) {
+  for (const a of seq) {
+    const el = $(a.el);
+    el.getAnimations().forEach((x) => x.cancel());
+    el.animate(a.quadros, { delay: a.de * 1000, duration: a.dur * 1000, easing: a.ease || "cubic-bezier(0.33, 0, 0.67, 1)", fill: "both" });
+  }
+}
+
+let timerSaida = null;
+const duracao = parseFloat(p.get("duracao")) || 0;
+function entrar(auto) {
+  clearTimeout(timerSaida);
+  tocar(ENTRADA);
+  if (auto && duracao > 0) timerSaida = setTimeout(sair, duracao * 1000);
+}
+function sair() { clearTimeout(timerSaida); tocar(SAIDA); }
+
+if (p.has("controle")) {
+  let atual = { noAr: false, url: null, titulo: null, rodape: null };
+  let timerTroca = null;
+  document.fonts.ready.then(() => {
+    const ev = new EventSource("/eventos?canal=overlay");
+    ev.onmessage = (e) => {
+      const m = JSON.parse(e.data);
+      if (m.tipo !== "qr") return;
+      clearTimeout(timerTroca);
+      const mudou = m.url !== atual.url || m.titulo !== atual.titulo || m.rodape !== atual.rodape;
+      if (m.noAr && !atual.noAr) { aplicar(m); entrar(); }
+      else if (m.noAr && mudou) { sair(); timerTroca = setTimeout(() => { aplicar(m); entrar(); }, 1300); }
+      else if (!m.noAr && atual.noAr) sair();
+      atual = { noAr: m.noAr, url: m.url, titulo: m.titulo, rodape: m.rodape };
+    };
+  });
+} else {
+  const m = {
+    url: p.get("url") || "https://instagram.com/adventistasbotafogo",
+    titulo: p.get("titulo") ?? "Siga no Instagram",
+    rodape: p.get("rodape") ?? "Aponte a câmera",
+  };
+  window.addEventListener("obsSourceVisibleChanged", (e) => { if (e.detail.visible) entrar(true); });
+  window.addEventListener("message", (e) => { if (e.data === "entrar") entrar(true); if (e.data === "sair") sair(); });
+  document.fonts.ready.then(() => { aplicar(m); entrar(true); });
+}
+</script>
+</body>
+</html>

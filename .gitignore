@@ -1,0 +1,14 @@
+# zips gerados (refaça com overlays OBS\pacote\gerar-pacote.ps1)
+pacote igreja/
+
+# listas vivas deste PC (pessoas e links salvos pelo painel)
+overlays OBS/painel/dados/predefinicoes.json
+
+# Node portátil, caso alguém copie para cá
+overlays OBS/node/
+
+Thumbs.db
+desktop.ini
+
+# salvamentos automáticos do EffectCraft
+projetos/EffectCraft Auto-Save/

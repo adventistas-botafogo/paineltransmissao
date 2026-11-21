@@ -1,0 +1,37 @@
+/* Tema compartilhado — Adventistas Botafogo
+   Valores extraídos de projetos/Overlays Culto - Adventistas Botafogo.ecproj (comp "LT Nome - OBS") */
+
+@font-face {
+  font-family: "Inter";
+  src: url("fontes/inter-latin-600.woff2") format("woff2");
+  font-weight: 600;
+  font-display: block;
+}
+@font-face {
+  font-family: "Inter";
+  src: url("fontes/inter-latin-700.woff2") format("woff2");
+  font-weight: 700;
+  font-display: block;
+}
+
+:root {
+  --marinho: #0F2A4A;
+  --azul: #4FA3E0;
+  --branco: #FFFFFF;
+
+  --fonte: "Inter", sans-serif;
+  --margem-x: 140px;          /* margem esquerda das placas */
+
+  /* "easy ease" do programa de motion (influência 33%) */
+  --ease: cubic-bezier(0.33, 0, 0.67, 1);
+}
+
+html, body {
+  margin: 0;
+  width: 1920px;
+  height: 1080px;
+  overflow: hidden;
+  background: transparent;    /* transparente no OBS */
+  font-family: var(--fonte);
+  -webkit-font-smoothing: antialiased;
+}

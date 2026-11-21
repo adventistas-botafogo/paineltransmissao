@@ -1,0 +1,62 @@
+OVERLAYS DA TRANSMISSÃO — ADVENTISTAS BOTAFOGO
+Como instalar no PC da transmissão (uma vez só)
+================================================
+
+Não precisa instalar nada além do OBS. O Node já vem dentro da pasta.
+
+1. COPIAR A PASTA
+   Extraia o .zip e deixe a pasta "Overlays Igreja" num lugar fixo,
+   por exemplo:  C:\Overlays Igreja
+   (não deixe em Downloads nem na Área de Trabalho, para ninguém apagar.)
+
+2. LIGAR O CONTROLE DO OBS
+   No OBS: Ferramentas > Configurações do servidor WebSocket
+   > marque "Ativar servidor WebSocket" > OK.
+   (não precisa anotar a senha; o painel lê sozinho.)
+
+3. ABRIR O PAINEL
+   Dois cliques em "Abrir painel.bat".
+   Uma janela preta abre (deixe aberta) e o painel abre no navegador.
+
+4. COLOCAR OS OVERLAYS NO OBS
+   No painel, clique em "Instalar no OBS".
+   Faça isso em cada cena do OBS que precisa dos overlays
+   (troque de cena no OBS e clique de novo).
+   As 3 luzes no topo do painel devem ficar verdes.
+
+5. (RECOMENDADO) ABRIR SOZINHO QUANDO O PC LIGAR
+   Dois cliques em "Ligar com o Windows.bat".
+   O painel passa a subir minimizado toda vez que o Windows iniciar.
+   Para desfazer: "Desligar do Windows.bat".
+
+6. TABLET OU CELULAR (opcional)
+   A janela preta mostra o endereço "Na rede interna" (ex.: http://192.168.0.20:3030).
+   Abra esse endereço no aparelho, ligado no mesmo Wi-Fi da igreja.
+   Se o Windows perguntar sobre o Firewall, permita SÓ em "Redes privadas".
+
+
+NO DIA DO CULTO
+---------------
+- Ligue o PC e abra o OBS. O painel já está rodando (se fez o passo 5);
+  senão, "Abrir painel.bat".
+- Painel no navegador: http://localhost:3030
+- Em caso de dúvida no meio do culto: botão vermelho "Esconder tudo".
+
+
+ATUALIZAR (quando vier uma versão nova)
+---------------------------------------
+A versão instalada aparece no topo do painel (ex.: "v1.0", ao lado do logo)
+e no nome do zip (ex.: "Overlays Igreja v1.1.zip"). O que mudou em cada
+versão está em HISTORICO.md.
+Feche a janela preta do painel, extraia o .zip novo POR CIMA da pasta
+"C:\Overlays Igreja" e aceite substituir os arquivos.
+As pessoas e links salvos NÃO se perdem (ficam em painel\dados\predefinicoes.json,
+que o pacote nunca traz).
+
+
+SE ALGO NÃO FUNCIONAR
+---------------------
+- Luz "OBS" vermelha: o OBS está aberto? O WebSocket está ativado (passo 2)?
+- Luz "Overlays na cena" vermelha: clique em "Instalar no OBS" nessa cena.
+- Painel não abre no navegador: a janela preta está aberta? Se fechou,
+  "Abrir painel.bat" de novo.

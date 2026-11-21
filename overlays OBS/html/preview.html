@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Preview dos overlays</title>
+<style>
+  body { margin: 0; padding: 20px; background: #1b1b1f; color: #eee; font: 14px system-ui, sans-serif; }
+  .controles { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 14px; }
+  input { background: #2a2a30; color: #eee; border: 1px solid #444; border-radius: 6px; padding: 7px 9px; width: 220px; }
+  button { background: #4FA3E0; color: #0F2A4A; border: 0; border-radius: 6px; padding: 8px 14px; font-weight: 700; cursor: pointer; }
+  button.sec { background: #3a3a42; color: #eee; }
+  label { display: flex; gap: 6px; align-items: center; }
+  .tela {
+    position: relative; width: 100%; max-width: 1280px; aspect-ratio: 16 / 9;
+    background: #000 url("../../referencias/fundo culto (teste).png") center / cover;
+    overflow: hidden;
+  }
+  .tela.vazio { background-image: none; background-color: #00b140; } /* chroma para checar transparência */
+  .tela iframe {
+    position: absolute; top: 0; left: 0; border: 0;
+    width: 1920px; height: 1080px; transform-origin: 0 0;
+    background: transparent;
+  }
+  .url { margin-top: 10px; color: #aaa; word-break: break-all; }
+</style>
+</head>
+<body>
+  <div class="controles">
+    <input id="nome" value="Pr. Patrick Duarte" placeholder="nome">
+    <input id="linha" value="@adventistasbotafogo" placeholder="linha">
+    <button id="aplicar">Aplicar / entrar</button>
+    <button class="sec" id="sair">Sair</button>
+    <label><input type="checkbox" id="verde" style="width:auto"> fundo verde</label>
+  </div>
+  <div class="tela" id="tela">
+    <iframe id="frame" allowtransparency="true"></iframe>
+  </div>
+  <div class="url">URL para o OBS: <code id="url"></code></div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const frame = $("frame"), tela = $("tela");
+
+  function escala() { frame.style.transform = `scale(${tela.clientWidth / 1920})`; }
+  new ResizeObserver(escala).observe(tela);
+
+  function aplicar() {
+    const q = new URLSearchParams({ nome: $("nome").value, linha: $("linha").value });
+    const src = "lower-third.html?" + q.toString().replace(/\+/g, "%20");
+    frame.src = src;
+    $("url").textContent = src;
+  }
+  $("aplicar").onclick = aplicar;
+  $("sair").onclick = () => frame.contentWindow.postMessage("sair", "*");
+  $("verde").onchange = (e) => tela.classList.toggle("vazio", e.target.checked);
+  aplicar();
+</script>
+</body>
+</html>

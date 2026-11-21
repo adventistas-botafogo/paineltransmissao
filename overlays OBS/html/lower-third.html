@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Lower third — nome</title>
+<link rel="stylesheet" href="tema.css">
+<style>
+  /* Geometria idêntica à comp "LT Nome - OBS" (1920×1080) */
+  .barra {
+    position: absolute;
+    left: 128px; top: 806px;
+    width: 12px; height: 166px;
+    background: var(--azul);
+    transform: scaleY(0);              /* cresce a partir do centro */
+  }
+  .placa-nome {
+    position: absolute;
+    left: var(--margem-x); top: 806px;
+    height: 112px;
+    min-width: 780px;
+    background: var(--marinho);
+    transform-origin: left center;
+    transform: scaleX(0);
+  }
+  .placa-linha {
+    position: absolute;
+    left: var(--margem-x); top: 918px;
+    height: 54px;
+    min-width: 400px;
+    background: var(--branco);
+    transform-origin: left center;
+    transform: scaleX(0);
+  }
+  /* Os textos ficam fora das placas, para não serem esticados pelo scaleX.
+     O padding direito das placas acompanha a largura do texto (ver script). */
+  .texto {
+    position: absolute;
+    left: 170px;
+    white-space: nowrap;
+    opacity: 0;
+  }
+  .nome {
+    top: 806px; height: 112px; line-height: 112px;
+    font-size: 54px; font-weight: 700;
+    color: var(--branco);
+  }
+  .linha {
+    top: 918px; height: 54px; line-height: 54px;
+    font-size: 26px; font-weight: 600;
+    letter-spacing: 0.04em;            /* tracking 40 */
+    color: var(--marinho);
+  }
+</style>
+</head>
+<body>
+  <div class="barra" id="barra"></div>
+  <div class="placa-nome" id="placaNome"></div>
+  <div class="placa-linha" id="placaLinha"></div>
+  <div class="texto nome" id="nome"></div>
+  <div class="texto linha" id="linha"></div>
+
+<script>
+/*  Parâmetros na URL:
+      nome     — texto principal            (padrão: "Pr. Patrick Duarte")
+      linha    — texto da placa branca      (padrão: "@adventistasbotafogo")
+      duracao  — segundos na tela antes de sair sozinho (0 ou ausente = fica até esconder no OBS)
+    Exemplo: lower-third.html?nome=Pra.%20Ana%20Souza&linha=Ministério%20da%20Mulher&duracao=10
+*/
+const p = new URLSearchParams(location.search);
+const $ = (id) => document.getElementById(id);
+
+$("nome").textContent  = p.get("nome")  || "Pr. Patrick Duarte";
+$("linha").textContent = p.get("linha") || "@adventistasbotafogo";
+const duracao = parseFloat(p.get("duracao")) || 0;
+
+// Placas crescem para caber textos longos (mesmo respiro de 30px à esquerda; 60px à direita)
+function ajustarLarguras() {
+  $("placaNome").style.width  = Math.max(780, 30 + $("nome").offsetWidth  + 60) + "px";
+  $("placaLinha").style.width = Math.max(400, 30 + $("linha").offsetWidth + 60) + "px";
+}
+
+// Linha do tempo copiada dos keyframes da comp (segundos)
+const ENTRADA = [
+  { el: "barra",      de: 0.0, dur: 0.4, quadros: [{ transform: "scaleY(0)" }, { transform: "scaleY(1)" }] },
+  { el: "placaNome",  de: 0.2, dur: 0.6, quadros: [{ transform: "scaleX(0)" }, { transform: "scaleX(1)" }] },
+  { el: "placaLinha", de: 0.4, dur: 0.6, quadros: [{ transform: "scaleX(0)" }, { transform: "scaleX(1)" }] },
+  { el: "nome",       de: 0.6, dur: 0.5, quadros: [{ opacity: 0, transform: "translateX(-30px)" }, { opacity: 1, transform: "none" }], ease: "cubic-bezier(0.33, 0, 1, 1)" },
+  { el: "linha",      de: 0.8, dur: 0.5, quadros: [{ opacity: 0, transform: "translateX(-30px)" }, { opacity: 1, transform: "none" }], ease: "cubic-bezier(0.33, 0, 1, 1)" },
+];
+const SAIDA = [
+  { el: "linha",      de: 0.0, dur: 0.35, quadros: [{ opacity: 1 }, { opacity: 0 }] },
+  { el: "nome",       de: 0.1, dur: 0.35, quadros: [{ opacity: 1 }, { opacity: 0 }] },
+  { el: "placaLinha", de: 0.3, dur: 0.6,  quadros: [{ transform: "scaleX(1)" }, { transform: "scaleX(0)" }] },
+  { el: "placaNome",  de: 0.4, dur: 0.6,  quadros: [{ transform: "scaleX(1)" }, { transform: "scaleX(0)" }] },
+  { el: "barra",      de: 0.8, dur: 0.4,  quadros: [{ transform: "scaleY(1)" }, { transform: "scaleY(0)" }] },
+];
+
+let timerSaida = null;
+
+function tocar(seq) {
+  for (const a of seq) {
+    const el = $(a.el);
+    el.getAnimations().forEach((x) => x.cancel());
+    el.animate(a.quadros, {
+      delay: a.de * 1000,
+      duration: a.dur * 1000,
+      easing: a.ease || "cubic-bezier(0.33, 0, 0.67, 1)",
+      fill: "both",
+    });
+  }
+}
+
+function entrar() {
+  clearTimeout(timerSaida);
+  tocar(ENTRADA);
+  if (duracao > 0) timerSaida = setTimeout(sair, duracao * 1000);
+}
+function sair() {
+  clearTimeout(timerSaida);
+  tocar(SAIDA);
+}
+
+if (p.has("controle")) {
+  // ---- Modo painel: quem manda é o servidor do painel (overlays OBS/painel) ----
+  // A fonte fica sempre visível no OBS; entra e sai com animação quando o operador clica.
+  let atual = { noAr: false, nome: null, linha: null };
+  let timerTroca = null;
+  const aplicarTexto = (m) => {
+    $("nome").textContent = m.nome;
+    $("linha").textContent = m.linha;
+    $("placaLinha").style.display = $("linha").style.display = m.linha ? "" : "none";
+    $("barra").style.height = m.linha ? "" : "112px";   // sem a placa branca, a barra acompanha só a azul
+    ajustarLarguras();
+  };
+  document.fonts.ready.then(() => {
+    const ev = new EventSource("/eventos?canal=overlay");
+    ev.onmessage = (e) => {
+      const m = JSON.parse(e.data);
+      if (m.tipo !== "lt") return;
+      clearTimeout(timerTroca);
+      const mudou = m.nome !== atual.nome || m.linha !== atual.linha;
+      if (m.noAr && !atual.noAr) { aplicarTexto(m); entrar(); }
+      else if (m.noAr && mudou) { sair(); timerTroca = setTimeout(() => { aplicarTexto(m); entrar(); }, 1300); }
+      else if (!m.noAr && atual.noAr) sair();
+      atual = { noAr: m.noAr, nome: m.nome, linha: m.linha };
+    };
+  });
+} else {
+  // ---- Modo avulso: texto pela URL, entra ao carregar ----
+  // OBS: repete a entrada quando a fonte volta a ficar visível
+  window.addEventListener("obsSourceVisibleChanged", (e) => { if (e.detail.visible) entrar(); });
+
+  // Página de teste (preview.html) controla por mensagens
+  window.addEventListener("message", (e) => {
+    if (e.data === "entrar") entrar();
+    if (e.data === "sair") sair();
+  });
+
+  document.fonts.ready.then(() => { ajustarLarguras(); entrar(); });
+}
+</script>
+</body>
+</html>

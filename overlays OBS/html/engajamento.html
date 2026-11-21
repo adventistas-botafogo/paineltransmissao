@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Engajamento</title>
+<link rel="stylesheet" href="tema.css">
+<style>
+  /* Os vídeos (.webm com transparência, feitos no EffectCraft) já têm 1920×1080 e o selo na posição certa. */
+  video { position: absolute; inset: 0; width: 1920px; height: 1080px; opacity: 0; }
+  video.tocando { opacity: 1; }
+</style>
+</head>
+<body>
+<script>
+/*  Toca as chamadas de engajamento (overlays OBS/engajamento/*.webm).
+      ?controle=1   — o painel do operador decide o que tocar (inclusive o rodízio automático)
+      ?video=Inscreva-se — modo avulso: toca esse vídeo ao carregar e quando a fonte volta a ficar visível
+*/
+const p = new URLSearchParams(location.search);
+const PASTA = "/midia/engajamento/";
+const videos = {};
+
+function video(arquivo) {
+  if (!videos[arquivo]) {
+    const v = document.createElement("video");
+    v.src = PASTA + encodeURIComponent(arquivo);
+    v.muted = true;
+    v.playsInline = true;
+    v.preload = "auto";
+    v.addEventListener("ended", () => v.classList.remove("tocando"));
+    document.body.append(v);
+    videos[arquivo] = v;
+  }
+  return videos[arquivo];
+}
+
+function tocar(arquivo) {
+  parar();
+  const v = video(arquivo);
+  v.currentTime = 0;
+  v.classList.add("tocando");
+  v.play().catch(() => v.classList.remove("tocando"));
+}
+function parar() {
+  for (const v of Object.values(videos)) { v.pause(); v.classList.remove("tocando"); }
+}
+
+if (p.has("controle")) {
+  let ultimo = null;
+  const ev = new EventSource("/eventos?canal=overlay");
+  ev.onmessage = (e) => {
+    const m = JSON.parse(e.data);
+    if (m.tipo === "eng-lista") m.chamadas.forEach((c) => video(c.arquivo));   // pré-carrega
+    if (m.tipo !== "eng") return;
+    if (m.seq === ultimo) return;          // reconexão: não repete o que já tocou
+    const primeira = ultimo === null;
+    ultimo = m.seq;
+    if (m.tocando && !primeira) tocar(m.tocando);
+    else if (!m.tocando) parar();
+  };
+} else {
+  const arq = (p.get("video") || "Inscreva-se") + ".webm";
+  window.addEventListener("obsSourceVisibleChanged", (e) => { if (e.detail.visible) tocar(arq); });
+  tocar(arq);
+}
+</script>
+</body>
+</html>
