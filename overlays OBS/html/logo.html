@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Logo do canto</title>
+<link rel="stylesheet" href="tema.css">
+<style>
+  /* PNG de 1920×1080 com o logo já posicionado no canto superior esquerdo */
+  /* o PNG tem o logo a 70 px da esquerda; desloco 26 px para a grade de 96 px do tema.css */
+  .logo { position: absolute; inset: 0; width: 1920px; height: 1080px; opacity: 0; transform: translateX(26px); }
+</style>
+</head>
+<body>
+  <img class="logo" id="logo" alt="">
+
+<script>
+/*  Modo painel (?controle=1): o servidor manda {tipo:"logo", noAr, arquivo}.
+    Modo avulso: ?arquivo=<nome do PNG na pasta logo>  (mostra ao carregar).  */
+const p = new URLSearchParams(location.search);
+const img = document.getElementById("logo");
+const EASE = "cubic-bezier(0.33, 0, 0.67, 1)";
+let atual = { noAr: false, arquivo: null };
+
+const fade = (de, para, dur) => img.animate([{ opacity: de }, { opacity: para }], { duration: dur, easing: EASE, fill: "both" }).finished;
+const opacidade = () => Number(getComputedStyle(img).opacity);
+const carregar = (arquivo) => new Promise((ok) => {
+  img.onload = img.onerror = ok;
+  img.src = "/midia/logo/" + encodeURIComponent(arquivo);
+});
+
+let fila = Promise.resolve();
+function aplicar(m) {
+  fila = fila.then(async () => {
+    const trocou = m.arquivo && m.arquivo !== atual.arquivo;
+    if (trocou) {
+      if (opacidade() > 0) await fade(opacidade(), 0, 400);   // troca de versão: some, troca, volta
+      await carregar(m.arquivo);
+    }
+    if (m.noAr && (trocou || !atual.noAr)) await fade(opacidade(), 1, 700);
+    else if (!m.noAr && atual.noAr) await fade(opacidade(), 0, 600);
+    atual = { noAr: m.noAr, arquivo: m.arquivo || atual.arquivo };
+  });
+}
+
+if (p.has("previa")) {
+  // Prévia do painel: {tipo:"previa", arquivo, animar}  ou  {tipo:"previa", limpar:true}
+  window.addEventListener("message", async (e) => {
+    const m = e.data;
+    if (!m || m.tipo !== "previa") return;
+    img.getAnimations().forEach((a) => a.cancel());
+    if (m.limpar) return;
+    if (m.arquivo !== atual.arquivo) { await carregar(m.arquivo); atual.arquivo = m.arquivo; }
+    if (m.animar) fade(0, 1, 700); else img.animate([{ opacity: 1 }], { duration: 1, fill: "both" });
+  });
+} else if (p.has("controle")) {
+  const ev = new EventSource("/eventos?canal=overlay");
+  ev.onmessage = (e) => {
+    const m = JSON.parse(e.data);
+    if (m.tipo === "logo") aplicar(m);
+  };
+} else {
+  aplicar({ noAr: true, arquivo: p.get("arquivo") || "OBS - logo canto superior esquerdo 1920x1080.png" });
+}
+</script>
+</body>
+</html>

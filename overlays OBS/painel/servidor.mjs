@@ -8,7 +8,7 @@
 import http from "node:http";
 import os from "node:os";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join, dirname, resolve, normalize, extname, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { conectar } from "../obs-cli/obs-ws.mjs";
@@ -27,22 +27,37 @@ const FONTES = [
   { nome: "Overlays Igreja - Nome", url: `http://127.0.0.1:${PORTA}/overlay/lower-third.html?controle=1` },
   { nome: "Overlays Igreja - QR",   url: `http://127.0.0.1:${PORTA}/overlay/qrcode.html?controle=1` },
   { nome: "Overlays Igreja - Engajamento", url: `http://127.0.0.1:${PORTA}/overlay/engajamento.html?controle=1` },
+  { nome: "Overlays Igreja - Logo", url: `http://127.0.0.1:${PORTA}/overlay/logo.html?controle=1` },
 ];
 
-// Chamadas de engajamento: vídeos .webm (com transparência) renderizados do EffectCraft
-const PASTA_ENG = resolve(AQUI, "..", "engajamento");
+// Logo do canto: PNGs 1920×1080 da pasta overlays OBS/logo (cada arquivo é uma versão)
+const PASTA_LOGO = resolve(AQUI, "..", "logo");
+function listarLogos() {
+  let arquivos = [];
+  try { arquivos = readdirSync(PASTA_LOGO).filter((a) => extname(a).toLowerCase() === ".png").sort(); } catch {}
+  return arquivos.map((arquivo) => {
+    const resto = arquivo.replace(/^OBS - logo canto superior esquerdo/i, "").replace(/1920x1080\.png$/i, "").replace(/\.png$/i, "").trim();
+    return { arquivo, titulo: resto ? resto[0].toUpperCase() + resto.slice(1) : "Padrão" };
+  });
+}
+
+// Chamadas de engajamento: selos em HTML (overlay/engajamento.html), com os textos editáveis no painel.
+// O ícone é fixo por chamada; linha1/linha2 podem ser trocadas e ficam salvas em predefinicoes.json.
 const CHAMADAS = [
-  { id: "inscreva",    titulo: "Inscreva-se",      arquivo: "Inscreva-se.webm" },
-  { id: "oracao",      titulo: "Pedido de oração", arquivo: "Pedido de oracao.webm" },
-  { id: "compartilhe", titulo: "Compartilhe",      arquivo: "Compartilhe.webm" },
+  { id: "inscreva",    titulo: "Inscreva-se",      icone: "inscreva",    linha1: "Inscreva-se no canal", linha2: "e ative o sininho" },
+  { id: "oracao",      titulo: "Pedido de oração", icone: "oracao",      linha1: "Pedidos de oração",    linha2: "deixe nos comentários" },
+  { id: "compartilhe", titulo: "Compartilhe",      icone: "compartilhe", linha1: "Compartilhe",          linha2: "envie para quem precisa ouvir" },
 ];
 const DURACAO_CHAMADA = 6.1; // segundos (duração das comps)
+// textos atuais: o padrão de cada chamada, com o que o operador editou por cima
+const chamadasAtuais = () => CHAMADAS.map((c) => ({ ...c, ...(predefinicoes.chamadas?.[c.id] || {}), padrao: { linha1: c.linha1, linha2: c.linha2 } }));
 
 // ---------- estado ----------
 const estado = {
   lt: { noAr: false, nome: "", linha: "@adventistasbotafogo", duracao: 0, desde: null },
   qr: { noAr: false, url: "", titulo: "", rodape: "", duracao: 0, desde: null },
   eng: { tocando: null, desde: null, seq: 0, rodizio: { ativo: false, minutos: 10, ids: CHAMADAS.map((c) => c.id), proxima: null, proximaId: null } },
+  logo: { noAr: true, arquivo: null },
   obs: { conectado: false, cena: null, fonteNaCena: false, faltando: [], erro: null },
 };
 // predefinicoes.json é o arquivo "vivo" do PC; o pacote de instalação traz só o
@@ -56,6 +71,13 @@ if (predefinicoes.rodizio) {
   estado.eng.rodizio.minutos = predefinicoes.rodizio.minutos || 10;
   estado.eng.rodizio.ids = (predefinicoes.rodizio.ids || []).filter((id) => CHAMADAS.some((c) => c.id === id));
 }
+// o logo volta como estava (ligado por padrão), mesmo se o painel reiniciar no meio do culto
+{
+  const logos = listarLogos();
+  const salvo = predefinicoes.logo || {};
+  estado.logo.noAr = salvo.noAr ?? true;
+  estado.logo.arquivo = logos.some((l) => l.arquivo === salvo.arquivo) ? salvo.arquivo : logos[0]?.arquivo || null;
+}
 
 // ---------- eventos (SSE) ----------
 const clientes = { painel: new Set(), overlay: new Set() };
@@ -63,9 +85,12 @@ function enviar(canal, msg) {
   const linha = `data: ${JSON.stringify(msg)}\n\n`;
   for (const res of clientes[canal]) res.write(linha);
 }
-const msgPainel = () => ({ tipo: "estado", estado, predefinicoes, chamadas: CHAMADAS, versao: VERSAO });
-const msgOverlayEng = () => ({ tipo: "eng", seq: estado.eng.seq, tocando: CHAMADAS.find((c) => c.id === estado.eng.tocando)?.arquivo || null });
-const msgOverlayEngLista = () => ({ tipo: "eng-lista", chamadas: CHAMADAS });
+const msgPainel = () => ({ tipo: "estado", estado, predefinicoes, chamadas: chamadasAtuais(), logos: listarLogos(), versao: VERSAO });
+const msgOverlayLogo = () => ({ tipo: "logo", ...estado.logo });
+const msgOverlayEng = () => {
+  const c = chamadasAtuais().find((x) => x.id === estado.eng.tocando);
+  return { tipo: "eng", seq: estado.eng.seq, tocando: c ? { id: c.id, icone: c.icone, linha1: c.linha1, linha2: c.linha2 } : null };
+};
 const msgOverlayLt = () => ({ tipo: "lt", ...estado.lt });
 const msgOverlayQr = () => ({ tipo: "qr", ...estado.qr });
 const avisarPainel = () => enviar("painel", msgPainel());
@@ -164,12 +189,27 @@ async function configurarRodizio({ ativo, minutos, ids }) {
   avisarPainel();
 }
 
+// ---------- logo ----------
+async function configurarLogo({ noAr, arquivo }) {
+  if (arquivo !== undefined) {
+    if (!listarLogos().some((l) => l.arquivo === arquivo)) throw new Error("Logo não encontrado na pasta");
+    estado.logo.arquivo = arquivo;
+  }
+  if (noAr !== undefined) estado.logo.noAr = !!noAr;
+  predefinicoes = { ...predefinicoes, logo: { ...estado.logo } };
+  await mkdir(dirname(ARQ_PREDEF), { recursive: true });
+  await writeFile(ARQ_PREDEF, JSON.stringify(predefinicoes, null, 2));
+  enviar("overlay", msgOverlayLogo());
+  avisarPainel();
+}
+
 // ---------- OBS ----------
 let obs = null;
 async function ligarObs() {
   try {
     obs = await conectar({ aoFechar: () => { obs = null; Object.assign(estado.obs, { conectado: false, erro: "Conexão com o OBS caiu" }); avisarPainel(); } });
     Object.assign(estado.obs, { conectado: true, erro: null });
+    await recarregarFontes();
     await atualizarObs();
   } catch (e) {
     obs = null;
@@ -177,6 +217,16 @@ async function ligarObs() {
       Object.assign(estado.obs, { conectado: false, erro: e.message });
       avisarPainel();
     }
+  }
+}
+// Na primeira conexão depois que o painel abre, recarrega as fontes de navegador dos overlays no OBS.
+// O OBS mantém essas páginas abertas; depois de uma atualização do pacote elas ainda estariam com o código antigo.
+let fontesRecarregadas = false;
+async function recarregarFontes() {
+  if (fontesRecarregadas || !obs) return;
+  fontesRecarregadas = true;
+  for (const f of FONTES) {
+    try { await obs.req("PressInputPropertiesButton", { inputName: f.nome, propertyName: "refreshnocache" }); } catch {}   // fonte ainda não instalada
   }
 }
 async function atualizarObs() {
@@ -213,7 +263,7 @@ async function instalarNoObs() {
 }
 
 // ---------- HTTP ----------
-const MIME = { ".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".json": "application/json", ".svg": "image/svg+xml", ".png": "image/png", ".woff2": "font/woff2", ".webm": "video/webm" };
+const MIME = { ".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".json": "application/json", ".svg": "image/svg+xml", ".png": "image/png", ".woff2": "font/woff2", ".jpg": "image/jpeg" };
 
 async function servirArquivo(res, raiz, rel) {
   const caminho = normalize(join(raiz, decodeURIComponent(rel)));
@@ -244,7 +294,7 @@ const servidor = http.createServer(async (req, res) => {
       const canal = url.searchParams.get("canal") === "overlay" ? "overlay" : "painel";
       res.writeHead(200, { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive" });
       res.write("retry: 1000\n\n");
-      const iniciais = canal === "overlay" ? [msgOverlayLt(), msgOverlayQr(), msgOverlayEngLista(), msgOverlayEng()] : [msgPainel()];
+      const iniciais = canal === "overlay" ? [msgOverlayLt(), msgOverlayQr(), msgOverlayEng(), msgOverlayLogo()] : [msgPainel()];
       for (const m of iniciais) res.write(`data: ${JSON.stringify(m)}\n\n`);
       clientes[canal].add(res);
       const pulso = setInterval(() => res.write(": pulso\n\n"), 15000);
@@ -272,11 +322,29 @@ const servidor = http.createServer(async (req, res) => {
       if (c.acao === "tocar") engTocar(c.id); else engParar();
       return responder(res, 200, { ok: true });
     }
+    if (rota === "POST /api/eng/textos") {
+      // {id, linha1, linha2}; linha1 vazia volta ao texto padrão da chamada
+      const c = await lerCorpo(req);
+      if (!CHAMADAS.some((x) => x.id === c.id)) return responder(res, 400, { erro: "Chamada desconhecida" });
+      const linha1 = String(c.linha1 ?? "").trim().slice(0, 40), linha2 = String(c.linha2 ?? "").trim().slice(0, 50);
+      const textos = { ...(predefinicoes.chamadas || {}) };
+      if (linha1) textos[c.id] = { linha1, linha2 }; else delete textos[c.id];
+      predefinicoes = { ...predefinicoes, chamadas: textos };
+      await mkdir(dirname(ARQ_PREDEF), { recursive: true });
+      await writeFile(ARQ_PREDEF, JSON.stringify(predefinicoes, null, 2));
+      avisarPainel();
+      return responder(res, 200, { ok: true });
+    }
     if (rota === "POST /api/eng/rodizio") {
       await configurarRodizio(await lerCorpo(req));
       return responder(res, 200, { ok: true });
     }
-    // "Esconder tudo" também desliga o rodízio (o operador religa quando quiser)
+    if (rota === "POST /api/logo") {
+      await configurarLogo(await lerCorpo(req));
+      return responder(res, 200, { ok: true });
+    }
+    // "Esconder tudo" também desliga o rodízio (o operador religa quando quiser).
+    // O logo fica: é a marca da transmissão, não um elemento de momento.
     if (rota === "POST /api/esconder-tudo") {
       ltSair(); qrSair(); engParar();
       if (estado.eng.rodizio.ativo) await configurarRodizio({ ativo: false });
@@ -297,7 +365,7 @@ const servidor = http.createServer(async (req, res) => {
       return responder(res, 200, { ok: true, cena });
     }
     if (req.method === "GET" && url.pathname.startsWith("/overlay/")) return servirArquivo(res, PASTA_OVERLAY, url.pathname.slice("/overlay/".length));
-    if (req.method === "GET" && url.pathname.startsWith("/midia/engajamento/")) return servirArquivo(res, PASTA_ENG, url.pathname.slice("/midia/engajamento/".length));
+    if (req.method === "GET" && url.pathname.startsWith("/midia/logo/")) return servirArquivo(res, PASTA_LOGO, url.pathname.slice("/midia/logo/".length));
     if (req.method === "GET") return servirArquivo(res, PASTA_PAINEL, url.pathname === "/" ? "index.html" : url.pathname.slice(1));
     responder(res, 404, { erro: "rota desconhecida" });
   } catch (e) {

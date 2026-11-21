@@ -5,29 +5,37 @@
 <title>QR code</title>
 <link rel="stylesheet" href="tema.css">
 <style>
-  /* Geometria idêntica à comp "QR - OBS" (1920×1080): cartão no canto inferior direito,
-     borda direita em x=1780 (espelho da margem de 140px do lower third). */
-  :root { --direita: 140px; --larg: 380px; }
+  /* Geometria da comp "QR - Compacto" (1920×1080): a "QR - OBS" em 70%,
+     apoiada no canto da grade do tema.css (barra azul em x=1824, base em y=1002). */
+  :root { --direita: 104px; --larg: 266px; }   /* 96 + barra azul de 8 */
 
+  .degrade {
+    position: absolute;
+    left: 0; top: 680px;
+    width: 1920px; height: 400px;
+    background: linear-gradient(to bottom,
+      rgba(5, 15, 31, 0) 0%, rgba(5, 15, 31, 0.22) 45%, rgba(5, 15, 31, 0.62) 100%);
+    opacity: 0;
+  }
   .barra {
     position: absolute;
-    right: calc(var(--direita) - 12px); top: 483px;
-    width: 12px; height: 489px;
+    right: 96px; top: 660px;
+    width: 8px; height: 342px;
     background: var(--azul);
     transform: scaleY(0);
   }
   .placa-qr {
     position: absolute;
-    right: var(--direita); top: 483px;
-    width: var(--larg); height: 435px;
+    right: var(--direita); top: 660px;
+    width: var(--larg); height: 304px;
     background: var(--marinho);
     transform-origin: right center;
     transform: scaleX(0);
   }
   .placa-rodape {
     position: absolute;
-    right: var(--direita); top: 918px;
-    height: 54px; min-width: 320px;
+    right: var(--direita); top: 964px;
+    height: 38px; min-width: 260px;
     background: var(--branco);
     transform-origin: right center;
     transform: scaleX(0);
@@ -35,19 +43,19 @@
   /* bloco centralizado na placa azul: título + quadrado branco com o QR */
   .centro {
     position: absolute;
-    right: var(--direita); top: 483px;
+    right: var(--direita); top: 660px;
     width: var(--larg);
   }
   .titulo {
-    height: 84px; line-height: 84px;
+    height: 59px; line-height: 59px;
     text-align: center; white-space: nowrap;
-    font-size: 34px; font-weight: 700;
+    font-size: 24px; font-weight: 700;
     color: var(--branco);
     opacity: 0;
   }
   .fundo-qr {
     margin: 0 auto;
-    width: 322px; height: 322px;
+    width: 225px; height: 225px;
     background: var(--branco);
     display: grid; place-items: center;
     opacity: 0;
@@ -55,17 +63,19 @@
   .fundo-qr svg { display: block; shape-rendering: crispEdges; }
   .rodape {
     position: absolute;
-    right: 170px; top: 918px;
-    height: 54px; line-height: 54px;
+    right: 125px; top: 964px;
+    height: 38px; line-height: 38px;
     white-space: nowrap;
-    font-size: 26px; font-weight: 600;
-    letter-spacing: 0.04em;
+    font-size: 18px; font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;            /* tracking 140 */
     color: var(--marinho);
     opacity: 0;
   }
 </style>
 </head>
 <body>
+  <div class="degrade" id="degrade"></div>
   <div class="barra" id="barra"></div>
   <div class="placa-qr" id="placaQr"></div>
   <div class="placa-rodape" id="placaRodape"></div>
@@ -87,7 +97,7 @@
 const p = new URLSearchParams(location.search);
 const $ = (id) => document.getElementById(id);
 
-// QR desenhado na hora. Margem branca de 4 módulos (zona de silêncio) dentro do quadrado de 322px.
+// QR desenhado na hora. Margem branca de 4 módulos (zona de silêncio) dentro do quadrado de 225px.
 function desenharQr(texto) {
   qrcode.stringToBytes = qrcode.stringToBytesFuncs["UTF-8"];
   const qr = qrcode(0, "M");
@@ -96,7 +106,7 @@ function desenharQr(texto) {
   const n = qr.getModuleCount();
   let d = "";
   for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (qr.isDark(y, x)) d += `M${x} ${y}h1v1h-1z`;
-  const lado = 322 * n / (n + 8);
+  const lado = 225 * n / (n + 8);
   $("fundoQr").innerHTML = `<svg width="${lado}" height="${lado}" viewBox="0 0 ${n} ${n}"><path d="${d}" fill="#000"/></svg>`;
 }
 
@@ -106,22 +116,23 @@ function aplicar(m) {
   $("rodape").textContent = m.rodape;
   const temRodape = !!m.rodape;
   $("placaRodape").style.display = $("rodape").style.display = temRodape ? "" : "none";
-  $("barra").style.height = temRodape ? "" : "435px";
-  // a placa azul alarga se o título for comprido (30px de respiro de cada lado)
-  const larg = Math.max(380, $("tituloTxt").offsetWidth + 60);
+  $("barra").style.height = temRodape ? "" : "304px";
+  // a placa azul alarga se o título for comprido (21px de respiro de cada lado)
+  const larg = Math.max(266, $("tituloTxt").offsetWidth + 42);
   document.documentElement.style.setProperty("--larg", larg + "px");
-  $("placaRodape").style.width = Math.max(320, $("rodape").offsetWidth + 60) + "px";
+  $("placaRodape").style.width = Math.max(260, $("rodape").offsetWidth + 42) + "px";
 }
 
-// Linha do tempo copiada dos keyframes da comp (segundos)
+// Linha do tempo copiada dos keyframes da comp "QR - Compacto" (segundos)
 const IN = "cubic-bezier(0.33, 0, 1, 1)"; // saída suave, chegada linear (deslize dos textos)
 const ENTRADA = [
+  { el: "degrade",     de: 0.0,  dur: 0.7, quadros: [{ opacity: 0 }, { opacity: 1 }], ease: "cubic-bezier(0.20, 0, 0.20, 1)" },
   { el: "barra",       de: 0.0,  dur: 0.4, quadros: [{ transform: "scaleY(0)" }, { transform: "scaleY(1)" }] },
   { el: "placaQr",     de: 0.2,  dur: 0.6, quadros: [{ transform: "scaleX(0)" }, { transform: "scaleX(1)" }] },
   { el: "placaRodape", de: 0.4,  dur: 0.6, quadros: [{ transform: "scaleX(0)" }, { transform: "scaleX(1)" }] },
-  { el: "titulo",      de: 0.6,  dur: 0.5, quadros: [{ opacity: 0, transform: "translateX(30px)" }, { opacity: 1, transform: "none" }], ease: IN },
+  { el: "titulo",      de: 0.6,  dur: 0.5, quadros: [{ opacity: 0, transform: "translateX(21px)" }, { opacity: 1, transform: "none" }], ease: IN },
   { el: "fundoQr",     de: 0.75, dur: 0.5, quadros: [{ opacity: 0, transform: "scale(0.85)" }, { opacity: 1, transform: "none" }] },
-  { el: "rodape",      de: 0.8,  dur: 0.5, quadros: [{ opacity: 0, transform: "translateX(30px)" }, { opacity: 1, transform: "none" }], ease: IN },
+  { el: "rodape",      de: 0.8,  dur: 0.5, quadros: [{ opacity: 0, transform: "translateX(21px)" }, { opacity: 1, transform: "none" }], ease: IN },
 ];
 const SAIDA = [
   { el: "rodape",      de: 0.0, dur: 0.35, quadros: [{ opacity: 1 }, { opacity: 0 }] },
@@ -130,6 +141,7 @@ const SAIDA = [
   { el: "placaRodape", de: 0.3, dur: 0.6,  quadros: [{ transform: "scaleX(1)" }, { transform: "scaleX(0)" }] },
   { el: "placaQr",     de: 0.4, dur: 0.6,  quadros: [{ transform: "scaleX(1)" }, { transform: "scaleX(0)" }] },
   { el: "barra",       de: 0.8, dur: 0.4,  quadros: [{ transform: "scaleY(1)" }, { transform: "scaleY(0)" }] },
+  { el: "degrade",     de: 0.5, dur: 0.7,  quadros: [{ opacity: 1 }, { opacity: 0 }], ease: "cubic-bezier(0.60, 0, 0.70, 1)" },
 ];
 
 function tocar(seq) {
@@ -149,7 +161,17 @@ function entrar(auto) {
 }
 function sair() { clearTimeout(timerSaida); tocar(SAIDA); }
 
-if (p.has("controle")) {
+if (p.has("previa")) {
+  // Prévia do painel: {tipo:"previa", url, titulo, rodape, animar}  ou  {tipo:"previa", limpar:true}
+  document.fonts.ready.then(() => window.addEventListener("message", (e) => {
+    const m = e.data;
+    if (!m || m.tipo !== "previa") return;
+    if (m.limpar) return document.getAnimations().forEach((a) => a.cancel());
+    aplicar(m);
+    tocar(ENTRADA);
+    if (!m.animar) document.getAnimations().forEach((a) => a.finish());
+  }));
+} else if (p.has("controle")) {
   let atual = { noAr: false, url: null, titulo: null, rodape: null };
   let timerTroca = null;
   document.fonts.ready.then(() => {

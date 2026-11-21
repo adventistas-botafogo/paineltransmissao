@@ -5,54 +5,64 @@
 <title>Lower third — nome</title>
 <link rel="stylesheet" href="tema.css">
 <style>
-  /* Geometria idêntica à comp "LT Nome - OBS" (1920×1080) */
+  /* Geometria da comp "LT Nome - Compacto" (1920×1080): a "Fluido" em 70%,
+     apoiada no canto da grade do tema.css (barra em x=96, base em y=1002) */
+  .degrade {
+    position: absolute;
+    left: 0; top: 680px;
+    width: 1920px; height: 400px;
+    /* escurece o rodapé só enquanto o nome está na tela */
+    background: linear-gradient(to bottom,
+      rgba(5, 15, 31, 0) 0%, rgba(5, 15, 31, 0.22) 45%, rgba(5, 15, 31, 0.62) 100%);
+    opacity: 0;
+  }
   .barra {
     position: absolute;
-    left: 128px; top: 806px;
-    width: 12px; height: 166px;
+    left: 96px; top: 886px;
+    width: 8px; height: 116px;
     background: var(--azul);
     transform: scaleY(0);              /* cresce a partir do centro */
   }
   .placa-nome {
     position: absolute;
-    left: var(--margem-x); top: 806px;
-    height: 112px;
-    min-width: 780px;
+    left: 104px; top: 886px;
+    height: 78px;
     background: var(--marinho);
     transform-origin: left center;
     transform: scaleX(0);
   }
   .placa-linha {
     position: absolute;
-    left: var(--margem-x); top: 918px;
-    height: 54px;
-    min-width: 400px;
+    left: 104px; top: 964px;
+    height: 38px;
     background: var(--branco);
     transform-origin: left center;
     transform: scaleX(0);
   }
   /* Os textos ficam fora das placas, para não serem esticados pelo scaleX.
-     O padding direito das placas acompanha a largura do texto (ver script). */
+     A largura das placas acompanha a largura do texto (ver script). */
   .texto {
     position: absolute;
-    left: 170px;
+    left: 125px;
     white-space: nowrap;
     opacity: 0;
   }
   .nome {
-    top: 806px; height: 112px; line-height: 112px;
-    font-size: 54px; font-weight: 700;
+    top: 886px; height: 78px; line-height: 78px;
+    font-size: 38px; font-weight: 700;
     color: var(--branco);
   }
   .linha {
-    top: 918px; height: 54px; line-height: 54px;
-    font-size: 26px; font-weight: 600;
-    letter-spacing: 0.04em;            /* tracking 40 */
+    top: 964px; height: 38px; line-height: 38px;
+    font-size: 18px; font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;            /* tracking 140 */
     color: var(--marinho);
   }
 </style>
 </head>
 <body>
+  <div class="degrade" id="degrade"></div>
   <div class="barra" id="barra"></div>
   <div class="placa-nome" id="placaNome"></div>
   <div class="placa-linha" id="placaLinha"></div>
@@ -73,38 +83,52 @@ $("nome").textContent  = p.get("nome")  || "Pr. Patrick Duarte";
 $("linha").textContent = p.get("linha") || "@adventistasbotafogo";
 const duracao = parseFloat(p.get("duracao")) || 0;
 
-// Placas crescem para caber textos longos (mesmo respiro de 30px à esquerda; 60px à direita)
+// Placas crescem para caber textos longos (respiro de 21 px à esquerda e 42 px à direita)
 function ajustarLarguras() {
-  $("placaNome").style.width  = Math.max(780, 30 + $("nome").offsetWidth  + 60) + "px";
-  $("placaLinha").style.width = Math.max(400, 30 + $("linha").offsetWidth + 60) + "px";
+  $("placaNome").style.width  = Math.max(546, 21 + $("nome").offsetWidth  + 42) + "px";
+  $("placaLinha").style.width = Math.max(343, 21 + $("linha").offsetWidth + 42) + "px";
 }
 
-// Linha do tempo copiada dos keyframes da comp (segundos)
+// Linha do tempo copiada dos keyframes da comp "LT Nome - Compacto" (segundos).
+// Curvas iguais às do EffectCraft (velocidade 0; influência de saída/chegada):
+const DES = "cubic-bezier(0.08, 0, 0.18, 1)";  // entrada: 8% / 82% — começa rápido e chega bem suave
+const ACE = "cubic-bezier(0.70, 0, 0.90, 1)";  // saída: 70% / 10% — começa suave e sai rápido
+// textos: deslize de 17 px (0,7 s) + aparecer e sair do desfoque (0,45 s)
+const textoEntra = (el, de) => [
+  { el, de, dur: 0.7,  quadros: [{ transform: "translateX(-17px)" }, { transform: "none" }] },
+  { el, de, dur: 0.45, quadros: [{ opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)" }] },
+];
+const textoSai = (el, de) => [
+  { el, de, dur: 0.35, quadros: [{ transform: "none" }, { transform: "translateX(-14px)" }] },
+  { el, de, dur: 0.3,  quadros: [{ opacity: 1, filter: "blur(0px)" }, { opacity: 0, filter: "blur(4px)" }] },
+];
 const ENTRADA = [
-  { el: "barra",      de: 0.0, dur: 0.4, quadros: [{ transform: "scaleY(0)" }, { transform: "scaleY(1)" }] },
-  { el: "placaNome",  de: 0.2, dur: 0.6, quadros: [{ transform: "scaleX(0)" }, { transform: "scaleX(1)" }] },
-  { el: "placaLinha", de: 0.4, dur: 0.6, quadros: [{ transform: "scaleX(0)" }, { transform: "scaleX(1)" }] },
-  { el: "nome",       de: 0.6, dur: 0.5, quadros: [{ opacity: 0, transform: "translateX(-30px)" }, { opacity: 1, transform: "none" }], ease: "cubic-bezier(0.33, 0, 1, 1)" },
-  { el: "linha",      de: 0.8, dur: 0.5, quadros: [{ opacity: 0, transform: "translateX(-30px)" }, { opacity: 1, transform: "none" }], ease: "cubic-bezier(0.33, 0, 1, 1)" },
-];
+  { el: "degrade",    de: 0.0,  dur: 0.7, ease: "cubic-bezier(0.20, 0, 0.20, 1)", quadros: [{ opacity: 0 }, { opacity: 1 }] },
+  { el: "barra",      de: 0.0,  dur: 0.5, quadros: [{ transform: "scaleY(0)" }, { transform: "scaleY(1)" }] },
+  { el: "placaNome",  de: 0.12, dur: 0.7, quadros: [{ transform: "scaleX(0)" }, { transform: "scaleX(1)" }] },
+  { el: "placaLinha", de: 0.24, dur: 0.7, quadros: [{ transform: "scaleX(0)" }, { transform: "scaleX(1)" }] },
+  ...textoEntra("nome", 0.42),
+  ...textoEntra("linha", 0.56),
+].map((a) => ({ ease: DES, ...a }));
 const SAIDA = [
-  { el: "linha",      de: 0.0, dur: 0.35, quadros: [{ opacity: 1 }, { opacity: 0 }] },
-  { el: "nome",       de: 0.1, dur: 0.35, quadros: [{ opacity: 1 }, { opacity: 0 }] },
-  { el: "placaLinha", de: 0.3, dur: 0.6,  quadros: [{ transform: "scaleX(1)" }, { transform: "scaleX(0)" }] },
-  { el: "placaNome",  de: 0.4, dur: 0.6,  quadros: [{ transform: "scaleX(1)" }, { transform: "scaleX(0)" }] },
-  { el: "barra",      de: 0.8, dur: 0.4,  quadros: [{ transform: "scaleY(1)" }, { transform: "scaleY(0)" }] },
-];
+  ...textoSai("linha", 0.0),
+  ...textoSai("nome", 0.06),
+  { el: "placaLinha", de: 0.2,  dur: 0.45, quadros: [{ transform: "scaleX(1)" }, { transform: "scaleX(0)" }] },
+  { el: "placaNome",  de: 0.28, dur: 0.45, quadros: [{ transform: "scaleX(1)" }, { transform: "scaleX(0)" }] },
+  { el: "barra",      de: 0.5,  dur: 0.35, quadros: [{ transform: "scaleY(1)" }, { transform: "scaleY(0)" }] },
+  { el: "degrade",    de: 0.2,  dur: 0.7, ease: "cubic-bezier(0.60, 0, 0.70, 1)", quadros: [{ opacity: 1 }, { opacity: 0 }] },
+].map((a) => ({ ease: ACE, ...a }));
 
 let timerSaida = null;
 
 function tocar(seq) {
+  // cancela tudo antes: o mesmo elemento recebe mais de uma animação (movimento e opacidade/desfoque)
+  for (const a of seq) $(a.el).getAnimations().forEach((x) => x.cancel());
   for (const a of seq) {
-    const el = $(a.el);
-    el.getAnimations().forEach((x) => x.cancel());
-    el.animate(a.quadros, {
+    $(a.el).animate(a.quadros, {
       delay: a.de * 1000,
       duration: a.dur * 1000,
-      easing: a.ease || "cubic-bezier(0.33, 0, 0.67, 1)",
+      easing: a.ease,
       fill: "both",
     });
   }
@@ -120,18 +144,30 @@ function sair() {
   tocar(SAIDA);
 }
 
-if (p.has("controle")) {
+const aplicarTexto = (m) => {
+  $("nome").textContent = m.nome;
+  $("linha").textContent = m.linha;
+  $("placaLinha").style.display = $("linha").style.display = m.linha ? "" : "none";
+  $("barra").style.height = m.linha ? "" : "78px";   // sem a placa branca, a barra acompanha só a azul
+  ajustarLarguras();
+};
+
+if (p.has("previa")) {
+  // ---- Prévia do painel: mostra o rascunho sem passar pelo servidor (nada vai pro ar) ----
+  // mensagem {tipo:"previa", nome, linha, animar}  ou  {tipo:"previa", limpar:true}
+  document.fonts.ready.then(() => window.addEventListener("message", (e) => {
+    const m = e.data;
+    if (!m || m.tipo !== "previa") return;
+    if (m.limpar) return document.getAnimations().forEach((a) => a.cancel());
+    aplicarTexto(m);
+    tocar(ENTRADA);
+    if (!m.animar) document.getAnimations().forEach((a) => a.finish());   // direto no quadro parado
+  }));
+} else if (p.has("controle")) {
   // ---- Modo painel: quem manda é o servidor do painel (overlays OBS/painel) ----
   // A fonte fica sempre visível no OBS; entra e sai com animação quando o operador clica.
   let atual = { noAr: false, nome: null, linha: null };
   let timerTroca = null;
-  const aplicarTexto = (m) => {
-    $("nome").textContent = m.nome;
-    $("linha").textContent = m.linha;
-    $("placaLinha").style.display = $("linha").style.display = m.linha ? "" : "none";
-    $("barra").style.height = m.linha ? "" : "112px";   // sem a placa branca, a barra acompanha só a azul
-    ajustarLarguras();
-  };
   document.fonts.ready.then(() => {
     const ev = new EventSource("/eventos?canal=overlay");
     ev.onmessage = (e) => {

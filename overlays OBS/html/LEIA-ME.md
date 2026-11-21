@@ -5,12 +5,15 @@ O operador controla os elementos por uma página própria, sem mexer no OBS.
 
 1. Abra o OBS (com **Ferramentas → Configurações do servidor WebSocket** ligado).
 2. Dê dois cliques em `overlays OBS\painel\iniciar-painel.bat`. Uma janela preta abre e **precisa ficar aberta** durante o culto; o painel abre sozinho no navegador.
-3. Na primeira vez em cada cena, clique em **Instalar no OBS**. Isso cria as fontes "Overlays Igreja - Nome", "Overlays Igreja - QR" e "Overlays Igreja - Engajamento" na cena atual.
-4. **Nome:** escolha uma pessoa da lista (ou digite o nome) e clique em **Mostrar**. Para tirar: **Tirar**, a tecla **Esc** ou **Esconder tudo**.
-5. **QR code:** escolha um link salvo (ou cole o link, o título e o rodapé) e clique em **Mostrar**. O QR é gerado na hora; o padrão é ficar 30 segundos na tela.
-6. **Chamadas de engajamento** (Inscreva-se, Pedido de oração, Compartilhe): clique no botão da chamada; ela aparece no canto superior direito por 6 s e sai sozinha. O **Rodízio automático** toca as chamadas marcadas, uma de cada vez, no intervalo escolhido. **Esconder tudo** também desliga o rodízio.
+3. Na primeira vez em cada cena, clique em **Instalar no OBS**. Isso cria as fontes "Overlays Igreja - Nome", "Overlays Igreja - QR", "Overlays Igreja - Engajamento" e "Overlays Igreja - Logo" na cena atual. Se a cena já tiver uma imagem antiga do logo, oculte essa imagem para o logo não aparecer duas vezes.
+**Prévia e No ar:** à direita (no tablet, no topo) ficam duas telas. **No ar** mostra os overlays que estão na tela agora, sobre fundo transparente (xadrez). **Prévia** mostra o que você tocou ou está editando, sem ir pro ar: **Animação** repete a entrada e **Mandar pro ar** leva ao vivo. Clicar no texto de um bloco salvo mostra na prévia; o botão **Pro ar** do bloco manda direto.
 
-Os vídeos das chamadas ficam em `overlays OBS\engajamento\*.webm` e são renderizados do EffectCraft (comps "Engajamento - …"). Para mudar um texto, edite a comp, renderize por cima do mesmo arquivo e pronto.
+4. **Nome:** na aba **Salvos**, clique em **Pro ar** no bloco da pessoa (vira **Tirar** enquanto está no ar). O lápis edita; **Novo** abre o formulário. O tempo na tela (8 s, 12 s, 20 s ou ∞) fica no formulário. Para tirar: **Tirar** no topo do cartão, a tecla **Esc** ou **Esconder tudo**.
+5. **QR code:** igual ao nome, com link, título e rodapé. O QR é gerado na hora; o padrão é ficar 30 segundos na tela.
+6. **Chamadas:** aba **Tocar** (o olho mostra na prévia, **Pro ar** toca por 6 s), aba **Rodízio** (liga o automático, escolhe o intervalo e as chamadas) e aba **Editar textos**. **Esconder tudo** também desliga o rodízio.
+7. **Logo:** **Tirar logo / Mostrar logo** (com fade). Clicar em outra versão mostra na prévia; **Usar esta versão** troca no ar. As versões são os PNGs de `overlays OBS\logo`. O **Esconder tudo** não tira o logo, e o painel lembra se ele estava ligado.
+
+As chamadas são desenhadas em HTML (`engajamento.html`). Para mudar um texto, abra **Editar textos das chamadas** no painel: a placa se ajusta sozinha ao tamanho do texto, e **Voltar ao padrão** restaura o original.
 
 Para usar num tablet ou celular, abra o endereço "Na rede interna" que aparece na janela preta. O aparelho precisa estar na mesma rede do PC da transmissão. Se o Windows perguntar sobre o Firewall, permita **apenas em redes privadas**.
 

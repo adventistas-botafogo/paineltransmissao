@@ -20,7 +20,12 @@
   --branco: #FFFFFF;
 
   --fonte: "Inter", sans-serif;
-  --margem-x: 140px;          /* margem esquerda das placas */
+
+  /* Grade única dos quatro cantos (1920×1080):
+     96 px das laterais (área segura de título) e 78 px do topo e da base.
+     - logo (sup. esq.) e selo de engajamento (sup. dir.): topo em y=78, bordas em x=96 / x=1824
+     - nome (inf. esq.) e QR (inf. dir.): base em y=1002, barras azuis em x=96 / x=1824 */
+  --margem-x: 108px;          /* medida antiga (96 + barra de 12); o nome compacto usa 96 + barra de 8 */
 
   /* "easy ease" do programa de motion (influência 33%) */
   --ease: cubic-bezier(0.33, 0, 0.67, 1);

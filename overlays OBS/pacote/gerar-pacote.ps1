@@ -11,7 +11,7 @@ Remove-Item $tmp -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force $raiz | Out-Null
 
 # o que o painel precisa para rodar
-foreach ($p in "painel", "html", "engajamento", "obs-cli", "logo") {
+foreach ($p in "painel", "html", "obs-cli", "logo") {
   Copy-Item (Join-Path $origem $p) $raiz -Recurse
 }
 # preview.html e LEIA-ME são de desenvolvimento; o arquivo vivo das listas nunca vai no pacote

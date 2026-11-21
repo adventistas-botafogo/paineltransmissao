@@ -22,7 +22,9 @@ Não precisa instalar nada além do OBS. O Node já vem dentro da pasta.
    No painel, clique em "Instalar no OBS".
    Faça isso em cada cena do OBS que precisa dos overlays
    (troque de cena no OBS e clique de novo).
-   As 3 luzes no topo do painel devem ficar verdes.
+   As 3 luzes no topo do painel (Painel, OBS e Cena) devem ficar verdes.
+   Se a cena já tinha uma imagem do logo da igreja, oculte essa imagem no OBS
+   (o logo agora vem do painel e apareceria duas vezes).
 
 5. (RECOMENDADO) ABRIR SOZINHO QUANDO O PC LIGAR
    Dois cliques em "Ligar com o Windows.bat".
@@ -52,11 +54,14 @@ Feche a janela preta do painel, extraia o .zip novo POR CIMA da pasta
 "C:\Overlays Igreja" e aceite substituir os arquivos.
 As pessoas e links salvos NÃO se perdem (ficam em painel\dados\predefinicoes.json,
 que o pacote nunca traz).
+Depois de extrair, abra o painel ("Abrir painel.bat"). Ele recarrega sozinho os
+overlays no OBS. Se a luz "Cena" ficar vermelha, a versão nova trouxe um overlay
+novo: clique em "Instalar no OBS" em cada cena, como no passo 4.
 
 
 SE ALGO NÃO FUNCIONAR
 ---------------------
 - Luz "OBS" vermelha: o OBS está aberto? O WebSocket está ativado (passo 2)?
-- Luz "Overlays na cena" vermelha: clique em "Instalar no OBS" nessa cena.
+- Luz "Cena" vermelha: clique em "Instalar no OBS" nessa cena.
 - Painel não abre no navegador: a janela preta está aberta? Se fechou,
   "Abrir painel.bat" de novo.

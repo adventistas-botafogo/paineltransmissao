@@ -5,64 +5,206 @@
 <title>Engajamento</title>
 <link rel="stylesheet" href="tema.css">
 <style>
-  /* Os vídeos (.webm com transparência, feitos no EffectCraft) já têm 1920×1080 e o selo na posição certa. */
-  video { position: absolute; inset: 0; width: 1920px; height: 1080px; opacity: 0; }
-  video.tocando { opacity: 1; }
+  /* Geometria das comps "Engajamento - … - Compacto" (1920×1080).
+     O selo é desenhado nas medidas originais da comp (placa e ícone com 96 px de altura)
+     e reduzido a 70% a partir do canto da grade do tema.css: topo em y=78, borda direita em x=1824. */
+  .grade {
+    position: absolute;
+    left: 1824px; top: 78px;
+    transform: scale(0.7);
+    transform-origin: 0 0;
+  }
+  /* placa azul-marinho: a largura acompanha o texto (ver ajustarLargura) */
+  .placa {
+    position: absolute;
+    right: 96px; top: 0;
+    height: 96px;
+    background: var(--marinho);
+    transform-origin: right center;
+    transform: scaleX(0);
+  }
+  .quadro {
+    position: absolute;
+    right: 0; top: 0;
+    width: 96px; height: 96px;
+    background: var(--azul);
+    transform: scale(0);
+  }
+  .quadro svg { position: absolute; inset: 0; overflow: visible; }
+  .quadro svg g { transform-box: view-box; transform-origin: 0 0; }
+  .texto {
+    position: absolute;
+    white-space: nowrap;
+    line-height: 1;
+    opacity: 0;
+  }
+  /* linhas de base da comp: y=43 e y=75 (Inter: linha de base a 0,864 em do topo com line-height 1) */
+  .linha1 { top: 15.4px; font-size: 32px; font-weight: 700; color: var(--branco); }
+  .linha2 {
+    top: 56px; font-size: 22px; font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;            /* tracking 140 */
+    color: var(--azul);
+  }
 </style>
 </head>
 <body>
+  <div class="grade">
+    <div class="placa" id="placa"></div>
+    <div class="texto linha1" id="linha1"></div>
+    <div class="texto linha2" id="linha2"></div>
+    <div class="quadro" id="quadro"></div>
+  </div>
+
 <script>
-/*  Toca as chamadas de engajamento (overlays OBS/engajamento/*.webm).
-      ?controle=1   — o painel do operador decide o que tocar (inclusive o rodízio automático)
-      ?video=Inscreva-se — modo avulso: toca esse vídeo ao carregar e quando a fonte volta a ficar visível
+/*  Chamadas de engajamento: selo no canto superior direito, 6 s na tela.
+      ?controle=1 — o painel do operador decide o que tocar (textos editáveis no painel)
+      modo avulso — ?chamada=inscreva|oracao|compartilhe e, opcionais, &linha1=…&linha2=…
+                    toca ao carregar e quando a fonte volta a ficar visível no OBS
 */
 const p = new URLSearchParams(location.search);
-const PASTA = "/midia/engajamento/";
-const videos = {};
+const $ = (id) => document.getElementById(id);
 
-function video(arquivo) {
-  if (!videos[arquivo]) {
-    const v = document.createElement("video");
-    v.src = PASTA + encodeURIComponent(arquivo);
-    v.muted = true;
-    v.playsInline = true;
-    v.preload = "auto";
-    v.addEventListener("ended", () => v.classList.remove("tocando"));
-    document.body.append(v);
-    videos[arquivo] = v;
-  }
-  return videos[arquivo];
+// Ícones copiados das camadas de forma das comps (centro do quadro = 0,0; ordem de baixo para cima)
+const MAR = "var(--marinho)", AZUL = "var(--azul)";
+const ICONES = {
+  inscreva: `<g transform="translate(0 -23)"><g id="mexe">
+      <path fill="${MAR}" d="M-20 36 C-20 36 -17 19 -17 10 C-16 0 -11 -4 0 -4 C11 -4 16 0 17 10 C17 19 20 36 20 36 C22 42 25 40 27 44 L-27 44 C-25 40 -18 42 -20 36Z"/>
+      <circle fill="${MAR}" cx="0" cy="-6" r="4.5"/>
+      <circle fill="${MAR}" cx="0" cy="49" r="7"/>
+    </g></g>`,
+  oracao: `<g id="mexe">
+      <rect fill="${MAR}" x="-27" y="-25" width="54" height="40" rx="20"/>
+      <path fill="${MAR}" d="M-14 12 L-2 12 L-16 26Z"/>
+      <circle fill="${AZUL}" cx="-5" cy="-9" r="6"/>
+      <circle fill="${AZUL}" cx="5" cy="-9" r="6"/>
+      <path fill="${AZUL}" d="M-10.8 -6.5 L10.8 -6.5 L0 6Z"/>
+    </g>`,
+  compartilhe: `<g id="mexe">
+      <path fill="none" stroke="${MAR}" stroke-width="5" d="M13 -14 L-12 0 L13 14"/>
+      <circle fill="${MAR}" cx="13" cy="-14" r="8.5"/>
+      <circle fill="${MAR}" cx="-12" cy="0" r="8.5"/>
+      <circle fill="${MAR}" cx="13" cy="14" r="8.5"/>
+    </g>`,
+};
+const PADRAO = {
+  inscreva:    { linha1: "Inscreva-se no canal", linha2: "e ative o sininho" },
+  oracao:      { linha1: "Pedidos de oração",    linha2: "deixe nos comentários" },
+  compartilhe: { linha1: "Compartilhe",          linha2: "envie para quem precisa ouvir" },
+};
+
+// A placa cresce ou encolhe com o texto: 32 px de respiro à esquerda e 42 px até o ícone (medidas da comp)
+const RESPIRO_ESQ = 32, RESPIRO_DIR = 42;
+function ajustarLargura() {
+  const texto = Math.max($("linha1").offsetWidth, $("linha2").offsetWidth);
+  const larg = RESPIRO_ESQ + texto + RESPIRO_DIR;
+  $("placa").style.width = larg + "px";
+  const esquerda = -(96 + larg) + RESPIRO_ESQ;
+  $("linha1").style.left = $("linha2").style.left = esquerda + "px";
 }
 
-function tocar(arquivo) {
-  parar();
-  const v = video(arquivo);
-  v.currentTime = 0;
-  v.classList.add("tocando");
-  v.play().catch(() => v.classList.remove("tocando"));
+function preparar(c) {
+  $("linha1").textContent = c.linha1 || "";
+  $("linha2").textContent = c.linha2 || "";
+  $("linha2").style.display = c.linha2 ? "" : "none";
+  $("quadro").innerHTML = `<svg width="96" height="96" viewBox="-48 -48 96 96">${ICONES[c.icone] || ""}</svg>`;
+  ajustarLargura();
+}
+
+// Linha do tempo copiada dos keyframes das comps (segundos)
+const EASE = "cubic-bezier(0.33, 0, 0.67, 1)";     // easy ease (influência 33%)
+const DESLIZE = "cubic-bezier(0.33, 0, 0.83, 1)";  // saída 33% / chegada 17%
+const ENTRADA = [
+  { el: "quadro", de: 0.0,   dur: 0.5,   quadros: [{ transform: "scale(0)" }, { transform: "scale(1.1)", offset: 0.7 }, { transform: "scale(1)" }] },
+  { el: "placa",  de: 0.2,   dur: 0.6,   quadros: [{ transform: "scaleX(0)" }, { transform: "scaleX(1)" }] },
+  { el: "linha1", de: 0.751, dur: 0.5,   quadros: [{ transform: "translateX(30px)" }, { transform: "none" }], ease: DESLIZE },
+  { el: "linha1", de: 0.751, dur: 0.5,   quadros: [{ opacity: 0 }, { opacity: 1 }] },
+  { el: "linha2", de: 0.901, dur: 0.5,   quadros: [{ transform: "translateX(30px)" }, { transform: "none" }], ease: DESLIZE },
+  { el: "linha2", de: 0.901, dur: 0.5,   quadros: [{ opacity: 0 }, { opacity: 1 }] },
+];
+const INICIO_SAIDA = 4.705;
+const SAIDA = [
+  { el: "linha2", de: 4.705, dur: 0.35,  quadros: [{ opacity: 1 }, { opacity: 0 }] },
+  { el: "linha1", de: 4.805, dur: 0.35,  quadros: [{ opacity: 1 }, { opacity: 0 }] },
+  { el: "placa",  de: 5.005, dur: 0.601, quadros: [{ transform: "scaleX(1)" }, { transform: "scaleX(0)" }] },
+  { el: "quadro", de: 5.405, dur: 0.401, quadros: [{ transform: "scale(1)" }, { transform: "scale(0)" }] },
+];
+// "respiro" do ícone, duas vezes: o sino balança, o coração e o compartilhar pulsam
+const MEXE = {
+  inscreva:    { dur: 0.951, prop: "rotate", un: "deg", valores: [0, 16, -13, 9, -5, 0], tempos: [0, 0.15, 0.35, 0.551, 0.751, 0.951] },
+  oracao:      { dur: 0.701, prop: "scale",  un: "",    valores: [1, 1.12, 1, 1.12, 1],  tempos: [0, 0.15, 0.3, 0.451, 0.701] },
+  compartilhe: { dur: 0.501, prop: "scale",  un: "",    valores: [1, 1.16, 1],           tempos: [0, 0.2, 0.501] },
+};
+const VEZES_MEXE = [1.101, 3.103];
+
+// fill "both" segura o primeiro quadro durante o atraso; a saída, quando vem junto com a entrada,
+// só pode segurar o último (senão ela "vence" a entrada e o selo aparece pronto desde o início)
+function animar(a, desloc = 0, fill = "both") {
+  return $(a.el).animate(a.quadros, { delay: (a.de - desloc) * 1000, duration: a.dur * 1000, easing: a.ease || EASE, fill });
+}
+function cancelar() {
+  document.querySelectorAll(".grade, .grade *").forEach((el) => el.getAnimations().forEach((x) => x.cancel()));
+}
+function tocar(c) {
+  cancelar();
+  preparar(c);
+  for (const a of ENTRADA) animar(a);
+  for (const a of SAIDA) animar(a, 0, "forwards");
+  const m = MEXE[c.icone], g = document.getElementById("mexe");
+  if (m && g) {
+    const quadros = m.valores.map((v, i) => ({ transform: `${m.prop}(${v}${m.un})`, offset: m.tempos[i] / m.dur, easing: EASE }));
+    // sem fill: fora dos dois trechos o ícone fica parado (rotação 0 / escala 1)
+    for (const de of VEZES_MEXE) g.animate(quadros, { delay: de * 1000, duration: m.dur * 1000 });
+  }
 }
 function parar() {
-  for (const v of Object.values(videos)) { v.pause(); v.classList.remove("tocando"); }
+  // sai com a mesma animação de saída, a partir de agora (se houver algo na tela)
+  const t = getComputedStyle($("quadro")).transform;
+  const visivel = t !== "none" && Number(t.slice(t.indexOf("(") + 1).split(",")[0]) > 0.01;
+  cancelar();
+  if (visivel) for (const a of SAIDA) animar(a, INICIO_SAIDA);
 }
 
-if (p.has("controle")) {
-  let ultimo = null;
-  const ev = new EventSource("/eventos?canal=overlay");
-  ev.onmessage = (e) => {
-    const m = JSON.parse(e.data);
-    if (m.tipo === "eng-lista") m.chamadas.forEach((c) => video(c.arquivo));   // pré-carrega
-    if (m.tipo !== "eng") return;
-    if (m.seq === ultimo) return;          // reconexão: não repete o que já tocou
-    const primeira = ultimo === null;
-    ultimo = m.seq;
-    if (m.tocando && !primeira) tocar(m.tocando);
-    else if (!m.tocando) parar();
-  };
-} else {
-  const arq = (p.get("video") || "Inscreva-se") + ".webm";
-  window.addEventListener("obsSourceVisibleChanged", (e) => { if (e.detail.visible) tocar(arq); });
-  tocar(arq);
+// quadro parado no meio da chamada (selo inteiro na tela), para a prévia do painel
+const MEIO = 2.5;
+let timerPrevia = null;
+function parado(c) {
+  tocar(c);
+  document.querySelectorAll(".grade, .grade *").forEach((el) => el.getAnimations().forEach((a) => { a.currentTime = MEIO * 1000; a.pause(); }));
 }
+
+document.fonts.ready.then(() => {
+  if (p.has("previa")) {
+    // Prévia do painel: {tipo:"previa", icone, linha1, linha2, animar}  ou  {tipo:"previa", limpar:true}
+    window.addEventListener("message", (e) => {
+      const m = e.data;
+      if (!m || m.tipo !== "previa") return;
+      clearTimeout(timerPrevia);
+      if (m.limpar) return cancelar();
+      if (!m.animar) return parado(m);
+      tocar(m);                                                     // a chamada inteira, com a saída
+      timerPrevia = setTimeout(() => parado(m), 6300);              // e volta ao quadro parado
+    });
+  } else if (p.has("controle")) {
+    let ultimo = null;
+    const ev = new EventSource("/eventos?canal=overlay");
+    ev.onmessage = (e) => {
+      const m = JSON.parse(e.data);
+      if (m.tipo !== "eng") return;
+      if (m.seq === ultimo) return;          // reconexão: não repete o que já tocou
+      const primeira = ultimo === null;
+      ultimo = m.seq;
+      if (m.tocando && !primeira) tocar(m.tocando);
+      else if (!m.tocando) parar();
+    };
+  } else {
+    const id = ICONES[p.get("chamada")] ? p.get("chamada") : "inscreva";
+    const c = { icone: id, linha1: p.get("linha1") ?? PADRAO[id].linha1, linha2: p.get("linha2") ?? PADRAO[id].linha2 };
+    window.addEventListener("obsSourceVisibleChanged", (e) => { if (e.detail.visible) tocar(c); });
+    window.addEventListener("message", (e) => { if (e.data === "entrar") tocar(c); if (e.data === "sair") parar(); });
+    tocar(c);
+  }
+});
 </script>
 </body>
 </html>
