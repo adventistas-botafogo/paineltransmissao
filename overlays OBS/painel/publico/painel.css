@@ -333,3 +333,23 @@ input:focus { outline: 2px solid var(--azul); outline-offset: 1px; border-color:
 }
 .acoes { grid-template-columns: 1fr 1.6fr 1fr; }
 form > .btn-link.perigo { justify-self: start; }
+
+/* ---------- celular ---------- */
+.segmentos span { white-space: nowrap; }
+@media (max-width: 640px) {
+  /* Prévia e No ar lado a lado e pequenas: os controles aparecem logo na primeira tela */
+  .monitor { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .tela-bloco { padding: 8px; border-radius: 10px; }
+  .tela-cab { margin-bottom: 6px; gap: 6px; }
+  .tela-titulo { display: none; }
+  .tela-acoes { grid-template-columns: 1fr; gap: 6px; margin-top: 8px; }
+  .tela-acoes .btn { padding: 9px 6px; font-size: 13px; }
+  #pvAnimar .ic { width: 14px; height: 14px; }
+  /* tempo: rótulo em cima, botões na largura toda */
+  .tempo-bar { flex-direction: column; align-items: stretch; gap: 8px; }
+  .tempo-bar .segmentos span { padding: 9px 2px; font-size: 13px; }
+  .cartao { padding: 14px; }
+  .app { padding: 10px; gap: 12px; }
+  .controles { gap: 12px; }
+  .tile-novo { min-height: 52px; }
+}

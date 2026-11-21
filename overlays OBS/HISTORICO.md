@@ -8,6 +8,11 @@ A versão atual fica em `versao.json`. Ela aparece no topo do painel, na janela 
 3. Gere o pacote com `pacote\gerar-pacote.ps1`.
 4. Grave a versão no git com `git commit` e `git tag vX.Y`.
 
+## 1.1.1 — 2026-11-21
+Painel no celular.
+- As telas **Prévia** e **No ar** ficam pequenas e lado a lado no topo, e os controles aparecem logo abaixo.
+- Os botões de tempo não quebram mais em duas linhas, e o bloco "+ Novo" ficou menor.
+
 ## 1.1 — 2026-11-21
 Visual mais compacto e painel novo.
 - **Nome e QR no estilo compacto:** 70% do tamanho anterior, com a linha de baixo em caixa alta espaçada e um degradê escuro na base que entra e sai junto. O nome ganhou uma animação mais fluida.
